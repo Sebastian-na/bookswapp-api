@@ -7,11 +7,14 @@ const UserSchema = new Schema({
   email: { type: String, required: true },
   password: { type: String, required: true },
   status: { type: String, default: "created" },
-  profilePic: { type: String },
-  bio: { type: String },
+  profilePic: { type: String, default: "https://i.imgur.com/XkYzZvY.png" },
+  bio: { type: String, default: "" },
   availableBooks: [{ type: Schema.Types.ObjectId, ref: "Book" }],
   wantedBooks: [{ type: Schema.Types.ObjectId, ref: "Book" }],
   friendRequests: [{ type: Schema.Types.ObjectId, ref: "FriendRequest" }],
+  friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
+  swapRequests: [{ type: Schema.Types.ObjectId, ref: "SwapRequest" }],
+  swaps: [{ type: Schema.Types.ObjectId, ref: "Swap" }],
 })
 
 const User = mongoose.model("User", UserSchema)

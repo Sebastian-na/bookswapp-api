@@ -6,10 +6,16 @@ module.exports = function verifyToken(req, res, next) {
   if (typeof bearerHeader !== "undefined") {
     const bearer = bearerHeader.split(" ")
     const bearerToken = bearer[1]
-    const { id } = jwt.verify(bearerToken, process.env.JWT_SECRET)
-    req.accessToken = bearerToken
-    req.userId = id
-    next()
+    console.log(bearerToken)
+    try {
+      const { id } = jwt.verify(bearerToken, process.env.JWT_SECRET)
+      req.accessToken = bearerToken
+      req.userId = id
+      next()
+    } catch (err) {
+      console.log("Bad signature")
+      res.sendStatus(403)
+    }
   } else {
     res.sendStatus(403)
   }
