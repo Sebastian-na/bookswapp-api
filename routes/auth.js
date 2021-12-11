@@ -4,11 +4,15 @@ require("dotenv").config()
 const User = require("../models/User.js")
 require("../db/connection")
 const jwt = require("jsonwebtoken")
-const mailgun = require("mailgun-js")
-const mg = mailgun({
-  apiKey: process.env.MAILGUN_API_KEY,
-  domain: process.env.MAILGUN_DOMAIN,
+const formData = require("form-data")
+const Mailgun = require("mailgun.js")
+const mailgun = new Mailgun(formData)
+const mg = mailgun.client({
+  username: process.env.MAILGUN_USER,
+  key: process.env.MAILGUN_API_KEY,
+  public_key: process.env.MAILGUN_PUBLIC_KEY,
 })
+
 
 const router = express.Router()
 
