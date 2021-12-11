@@ -1,12 +1,16 @@
 const express = require("express")
+const multer = require("multer")
 const verifyToken = require("../../../middlewares/verifyToken")
+const upload = require("../../../middlewares/upload")
 const User = require("../../../models/User")
 const Book = require("../../../models/Book")
 
 const router = express.Router()
 
-router.post("/addAvailable", verifyToken, async (req, res) => {
-  const { title, author, genre, tags, description, photos } = req.body
+router.post("/addAvailable", verifyToken, upload.array("image"), async (req, res) => {
+  const { title, author, genre, tags, description } = req.body
+
+  const photos = req.files.map(file => file.id)
 
   const book = new Book({
     title,
@@ -28,8 +32,10 @@ router.post("/addAvailable", verifyToken, async (req, res) => {
   }
 })
 
-router.post("/addWanted", verifyToken, async (req, res) => {
+router.post("/addWanted", verifyToken, upload.array("image"), async (req, res) => {
   const { title, author, genre, tags, description, photos } = req.body
+
+  const photos = req.files.map(file => file.id)
 
   const book = new Book({
     title,

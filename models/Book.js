@@ -7,8 +7,8 @@ const BookSchema = new Schema({
   genre: { type: String, required: true },
   tags: [{ type: String, required: true }],
   description: { type: String, required: true },
-  photos: [{ type: String, required: true }],
+  photos: [{ type: Schema.Types.ObjectId, required: true }],
 })
 
-Book = mongoose.model("Book", BookSchema)
+const Book = mongoose.model("Book", BookSchema)
 module.exports = Book
