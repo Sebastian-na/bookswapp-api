@@ -4,22 +4,14 @@ require("dotenv").config()
 const User = require("../models/User.js")
 require("../db/connection")
 const jwt = require("jsonwebtoken")
-const formData = require("form-data")
-const Mailgun = require("mailgun.js")
-const mailgun = new Mailgun(formData)
-const mg = mailgun.client({
-  username: process.env.MAILGUN_USER,
-  key: process.env.MAILGUN_API_KEY,
-  public_key: process.env.MAILGUN_PUBLIC_KEY,
+const mg = require("mailgun-js")({
+  apiKey: process.env.MAILGUN_API_KEY,
+  domain: process.env.MAILGUN_DOMAIN,
 })
-
 
 const router = express.Router()
 
 router.post("/login", (req, res) => {
-  console.log(req.body.email)
-  console.log(req.body.password)
-  console.log(req.body)
   User.findOne({ email: req.body.email })
     .then((user) => {
       if (!user) {
@@ -48,21 +40,23 @@ router.post("/register", async (req, res) => {
     const { name, email, password } = req.body
 
     if (!name || !email || !password) {
-      res.status(400).json({ message: "Missing fields" })
+      return res.status(400).json({ message: "Missing fields" })
     }
 
     const oldUser = await User.findOne({ email })
     if (oldUser) {
       if (oldUser.status === "verified") {
-        res.status(400).json({ message: "User already exists" })
+        return res.status(400).json({ message: "User already exists" })
       } else {
-        res.status(400).json({ message: "Please, verify your email" })
+        return res.status(400).json({ message: "Please, verify your email" })
       }
     }
 
-    if (!email.includes("@unal.edu.co")) {
-      res.status(400).json({ message: "You need to use your UNAL email" })
-    }
+    // if (!email.includes("@unal.edu.co")) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "You need to use your UNAL email" })
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -79,21 +73,20 @@ router.post("/register", async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
     const data = {
       from: `Bookswap <postmaster@${process.env.MAILGUN_DOMAIN}>`,
-      to: email,
+      to: [email],
       subject: "Welcome to Bookswap",
       html: `
       <h1>Bienvenido a Bookswap ${name}</h1>
       <p>Verifica tu cuenta haciendo click en el siguiente enlace:</p>
       <a href="${process.env.CLIENT_URL}/auth/verify?accessToken=${token}">Verificar cuenta</a>
       `,
+      message: `Welcome to Bookswap ${name}`,
     }
+    console.log("here")
     mg.messages().send(data, (error, body) => {
-      if (error) {
-        console.log(error)
-      }
+      console.log(body)
     })
-
-    res.status(201).json({ message: "User created, please verify your email" })
+    res.status(200).json({ message: "User created, Please verify your email" })
   } catch {
     res.status(500)
   }

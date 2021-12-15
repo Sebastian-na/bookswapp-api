@@ -11,4 +11,4 @@ moongose
   .then(() => console.log("DB connected"))
   .catch((err) => console.log(err))
 
-module.exports = { uri }
+module.exports = { uri, dbName: "myFirstDatabase" }

@@ -1,7 +1,8 @@
 const express = require("express")
 const router = express.Router()
-const User = require("../../../models/User")
-const verifyToken = require("../../../middlewares/verifyToken")
+const User = require("../../models/User")
+const verifyToken = require("../../middlewares/verifyToken")
+const upload = require("../../middlewares/upload")
 
 const fieldsAllowedToUpdate = ["name", "bio", "profilePic"]
 
@@ -13,11 +14,17 @@ router.get("/", verifyToken, async (req, res) => {
 })
 
 // @route   PUT api/user/profile
-router.put("/", verifyToken, async (req, res) => {
+router.put("/", verifyToken, upload.single("image"), async (req, res) => {
+  const photo = req.file
+
   // get keys from req.body
   const keys = Object.keys(req.body)
   // get user from database with the id in req.userId
   const user = await User.findById(req.userId)
+  if (photo) {
+    user.profilePic = photo.id
+  }
+
   if (!user) return res.status(404).json({ message: "User not found" })
 
   // loop through keys
@@ -27,6 +34,16 @@ router.put("/", verifyToken, async (req, res) => {
     }
     // set user[key] to req.body[key]
     user[keys[i]] = req.body[keys[i]]
+  }
+
+  if (keys.includes("genres")) {
+    //push new genres to user.genres
+    user.genres = user.genres.concat(req.body.genres)
+  }
+
+  if (keys.includes("tags")) {
+    //push new tags to user.tags
+    user.tags = user.tags.concat(req.body.tags)
   }
 
   // save user
