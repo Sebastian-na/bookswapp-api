@@ -3,6 +3,17 @@ const router = express.Router()
 const User = require("../../models/User")
 const verifyToken = require("../../middlewares/verifyToken")
 const upload = require("../../middlewares/upload")
+const dbConfig = require("../../db/connection")
+const MongoClient = require("mongodb").MongoClient
+const GridFsBucket = require("mongodb").GridFSBucket
+
+const mongoClient = new MongoClient(
+  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ah3vy.mongodb.net`,
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+)
 
 const fieldsAllowedToUpdate = ["name", "bio", "profilePic"]
 
@@ -49,6 +60,30 @@ router.put("/", verifyToken, upload.single("image"), async (req, res) => {
   // save user
   await user.save()
   res.status(200).json(user)
+})
+
+router.get("/photo/:name/", async (req, res) => {
+  try {
+    await mongoClient.connect()
+    const db = mongoClient.db(dbConfig.dbName)
+    const bucket = new GridFsBucket(db, {
+      bucketName: "images",
+    })
+    const readStream = bucket.openDownloadStreamByName(req.params.name)
+    readStream.on("data", (chunk) => {
+      res.status(200).write(chunk)
+    })
+
+    readStream.on("error", (err) => {
+      res.status(404).send({ message: err })
+    })
+
+    readStream.on("end", () => {
+      res.end()
+    })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
 })
 
 module.exports = router

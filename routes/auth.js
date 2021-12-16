@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt")
 require("dotenv").config()
 const User = require("../models/User.js")
 require("../db/connection")
+const verifyToken = require("../middlewares/verifyToken")
 const jwt = require("jsonwebtoken")
 const mg = require("mailgun-js")({
   apiKey: process.env.MAILGUN_API_KEY,
@@ -108,6 +109,10 @@ router.get("/verify", async (req, res) => {
   } catch {
     res.status(500)
   }
+})
+
+router.post("/verifyToken", verifyToken, (req, res) => {
+  res.status(200).json({ message: "Token verified" })
 })
 
 module.exports = router

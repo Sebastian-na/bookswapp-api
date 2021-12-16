@@ -128,7 +128,7 @@ router.get("/wanted", verifyToken, async (req, res) => {
   }
 })
 
-router.get("/files/:name/", verifyToken, async (req, res) => {
+router.get("/files/:name/", async (req, res) => {
   try {
     await mongoClient.connect()
     const db = mongoClient.db(dbConfig.dbName)
@@ -137,15 +137,15 @@ router.get("/files/:name/", verifyToken, async (req, res) => {
     })
     const readStream = bucket.openDownloadStreamByName(req.params.name)
     readStream.on("data", (chunk) => {
-      return res.status(200).send(chunk)
+      res.status(200).write(chunk)
     })
 
     readStream.on("error", (err) => {
-      return res.status(404).send({ message: err })
+      res.status(404).send({ message: err })
     })
 
     readStream.on("end", () => {
-      return res.end()
+      res.end()
     })
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -204,9 +204,31 @@ router.delete("/deleteWanted/:id", verifyToken, async (req, res) => {
 
 // this route should return a list of books based on user query
 router.get("/search", verifyToken, async (req, res) => {
+  await mongoClient.connect()
+  const db = mongoClient.db(dbConfig.dbName)
+  const images = db.collection("images.files")
   const { q } = req.query
-  const results = await Book.find({ $text: { $search: q } })
-  res.json(results)
+  const results = await Book.find({
+    $text: { $search: q },
+    owner: { $ne: null },
+  }).lean()
+  const cleanedBooks = await Promise.all(
+    results.map(async (book) => {
+      const photosUrl = await Promise.all(
+        book.photos.map(async (photo) => {
+          const image = await images.findOne({ _id: photo })
+          return filesUrl + image.filename
+        })
+      )
+      const owner = await User.findById(book.owner)
+      if (owner) {
+        return { ...book, photos: photosUrl, owner: owner.name }
+      } else {
+        return { ...book, photos: photosUrl }
+      }
+    })
+  )
+  res.json(cleanedBooks)
 })
 
 module.exports = router
