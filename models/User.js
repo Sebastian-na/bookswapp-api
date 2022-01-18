@@ -11,12 +11,16 @@ const UserSchema = new Schema({
   bio: { type: String, default: "" },
   genres: [{ type: String }],
   tags: [{ type: String }],
-  availableBooks: [{ type: Schema.Types.ObjectId, ref: "Book" }],
-  wantedBooks: [{ type: Schema.Types.ObjectId, ref: "Book" }],
-  friendRequests: [{ type: Schema.Types.ObjectId, ref: "FriendRequest" }],
-  friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  swapRequests: [{ type: Schema.Types.ObjectId, ref: "SwapRequest" }],
-  swaps: [{ type: Schema.Types.ObjectId, ref: "Swap" }],
+  availableBooks: [{ type: Schema.Types.ObjectId, ref: "Book", default: [] }],
+  wantedBooks: [{ type: Schema.Types.ObjectId, ref: "Book", default: [] }],
+  friendRequests: [
+    { type: Schema.Types.ObjectId, ref: "FriendRequest", default: [] },
+  ],
+  friends: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }],
+  swapRequests: [
+    { type: Schema.Types.ObjectId, ref: "SwapRequest", default: [] },
+  ],
+  swaps: [{ type: Schema.Types.ObjectId, ref: "Swap", default: [] }],
 })
 
 const User = mongoose.model("User", UserSchema)

@@ -24,6 +24,7 @@ router.post("/login", (req, res) => {
             res.status(200).json({
               message: "Login successful",
               token: token,
+              user_id: user._id,
             })
           } else {
             res.status(401).json({ message: "Wrong password" })
@@ -53,11 +54,11 @@ router.post("/register", async (req, res) => {
       }
     }
 
-    // if (!email.includes("@unal.edu.co")) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "You need to use your UNAL email" })
-    // }
+    if (!email.includes("@unal.edu.co")) {
+      return res
+        .status(400)
+        .json({ message: "You need to use your UNAL email" })
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -65,6 +66,8 @@ router.post("/register", async (req, res) => {
       name: name,
       email: email.toLowerCase(),
       password: hashedPassword,
+      profilePic:
+        "http://192.168.1.65:3000/user/profile/photo/1639677656390-user.png",
     })
 
     user.save((err) => {
@@ -83,7 +86,6 @@ router.post("/register", async (req, res) => {
       `,
       message: `Welcome to Bookswap ${name}`,
     }
-    console.log("here")
     mg.messages().send(data, (error, body) => {
       console.log(body)
     })

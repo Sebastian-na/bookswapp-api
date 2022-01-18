@@ -17,11 +17,20 @@ const mongoClient = new MongoClient(
 
 const fieldsAllowedToUpdate = ["name", "bio", "profilePic"]
 
+const filesUrl = "http://192.168.1.65:3000/user/books/files/"
+
 // @route   GET api/user/profile
 router.get("/", verifyToken, async (req, res) => {
   //get user from database with the id in req.userId without his password
+
   const user = await User.findById(req.userId, "-password")
-  res.status(200).json(user)
+  await mongoClient.connect()
+  const db = mongoClient.db(dbConfig.dbName)
+  const images = db.collection("images.files")
+  const profilePic = await images.findOne({ _id: user.profilePic })
+  res
+    .status(200)
+    .json({ ...user._doc, profilePic: filesUrl + profilePic.filename })
 })
 
 // @route   PUT api/user/profile
