@@ -20,7 +20,12 @@ const UserSchema = new Schema({
   swapRequests: [
     { type: Schema.Types.ObjectId, ref: "SwapRequest", default: [] },
   ],
+  swapNotifications: [
+    { type: Schema.Types.ObjectId, ref: "SwapRequest", default: [] },
+  ],
   swaps: [{ type: Schema.Types.ObjectId, ref: "Swap", default: [] }],
+  contacts: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }],
+  phoneNumber: { type: String, required: true },
 })
 
 const User = mongoose.model("User", UserSchema)

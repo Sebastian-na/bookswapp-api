@@ -5,6 +5,7 @@ const User = require("../models/User.js")
 require("../db/connection")
 const verifyToken = require("../middlewares/verifyToken")
 const jwt = require("jsonwebtoken")
+const { ObjectId } = require("mongodb")
 const mg = require("mailgun-js")({
   apiKey: process.env.MAILGUN_API_KEY,
   domain: process.env.MAILGUN_DOMAIN,
@@ -39,9 +40,9 @@ router.post("/login", (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body
+    const { name, email, password, phoneNumber } = req.body
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phoneNumber) {
       return res.status(400).json({ message: "Missing fields" })
     }
 
@@ -54,11 +55,11 @@ router.post("/register", async (req, res) => {
       }
     }
 
-    if (!email.includes("@unal.edu.co")) {
-      return res
-        .status(400)
-        .json({ message: "You need to use your UNAL email" })
-    }
+    // if (!email.includes("@unal.edu.co")) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "You need to use your UNAL email" })
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -66,12 +67,16 @@ router.post("/register", async (req, res) => {
       name: name,
       email: email.toLowerCase(),
       password: hashedPassword,
-      profilePic:
-        "http://192.168.1.65:3000/user/profile/photo/1639677656390-user.png",
+      profilePic: ObjectId("61b91d785817bf53f5e9376c"),
+      phoneNumber: phoneNumber,
     })
+    console.log(user)
 
-    user.save((err) => {
-      if (err) res.status(500).send(err)
+    const userSaved = user.save((err, user) => {
+      if (err) {
+        console.log(err)
+      }
+      console.log(user)
     })
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
@@ -90,8 +95,9 @@ router.post("/register", async (req, res) => {
       console.log(body)
     })
     res.status(200).json({ message: "User created, Please verify your email" })
-  } catch {
-    res.status(500)
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: "Internal server error" })
   }
 })
 

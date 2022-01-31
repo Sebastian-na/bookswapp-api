@@ -6,6 +6,7 @@ const upload = require("../../middlewares/upload")
 const dbConfig = require("../../db/connection")
 const MongoClient = require("mongodb").MongoClient
 const GridFsBucket = require("mongodb").GridFSBucket
+const { FILES_URL } = require("../../constants/index")
 
 const mongoClient = new MongoClient(
   `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ah3vy.mongodb.net`,
@@ -16,8 +17,6 @@ const mongoClient = new MongoClient(
 )
 
 const fieldsAllowedToUpdate = ["name", "bio", "profilePic"]
-
-const filesUrl = "http://192.168.1.65:3000/user/books/files/"
 
 // @route   GET api/user/profile
 router.get("/", verifyToken, async (req, res) => {
@@ -30,7 +29,7 @@ router.get("/", verifyToken, async (req, res) => {
   const profilePic = await images.findOne({ _id: user.profilePic })
   res
     .status(200)
-    .json({ ...user._doc, profilePic: filesUrl + profilePic.filename })
+    .json({ ...user._doc, profilePic: FILES_URL + profilePic.filename })
 })
 
 // @route   PUT api/user/profile

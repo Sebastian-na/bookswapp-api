@@ -5,6 +5,7 @@ const Book = require("../../models/Book")
 const verifyToken = require("../../middlewares/verifyToken")
 const MongoClient = require("mongodb").MongoClient
 const dbConfig = require("../../db/connection")
+const { FILES_URL } = require("../../constants/index")
 
 const mongoClient = new MongoClient(
   `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ah3vy.mongodb.net`,
@@ -13,9 +14,6 @@ const mongoClient = new MongoClient(
     useUnifiedTopology: true,
   }
 )
-
-const photosUrl = "http://192.168.1.65:3000/user/profile/photo/"
-const filesUrl = "http://192.168.1.65:3000/user/books/files/"
 
 // this route should return a list of books that the user is interested in (base on his genres)
 router.get("/", verifyToken, async (req, res) => {
@@ -33,7 +31,7 @@ router.get("/", verifyToken, async (req, res) => {
       const photosUrl = await Promise.all(
         book.photos.map(async (photo) => {
           const image = await images.findOne({ _id: photo })
-          return filesUrl + image.filename
+          return FILES_URL + image.filename
         })
       )
       return { ...book, photos: photosUrl }
@@ -55,10 +53,46 @@ router.get("/", verifyToken, async (req, res) => {
         ...book,
         wantedBooks: wantedBooks,
         ownerName: owner.name,
-        ownerPhoto: photosUrl + ownerPhoto.filename,
+        ownerPhoto: FILES_URL + ownerPhoto.filename,
       }
     })
   )
+
+  res.status(200).json(response)
+})
+
+router.get("/post", verifyToken, async (req, res) => {
+  console.log("here")
+  const user = await User.findById(req.userId)
+  const book = await Book.findById(req.query.id).lean()
+
+  await mongoClient.connect()
+  const db = mongoClient.db(dbConfig.dbName)
+  const images = db.collection("images.files")
+  const bookWithUrlOfImages = await Promise.all(
+    book.photos.map(async (photo) => {
+      const image = await images.findOne({ _id: photo })
+      return FILES_URL + image.filename
+    })
+  )
+
+  const owner = await User.findById(book.owner)
+  const ownerPhoto = await images.findOne({ _id: owner.profilePic })
+
+  //get wanted books by owner
+  const wantedBooks = await Promise.all(
+    owner.wantedBooks.map(async (bookId) => {
+      return await Book.findById(bookId)
+    })
+  )
+
+  const response = {
+    ...book,
+    wantedBooks,
+    photos: bookWithUrlOfImages,
+    ownerName: owner.name,
+    ownerPhoto: FILES_URL + ownerPhoto.filename,
+  }
 
   res.status(200).json(response)
 })

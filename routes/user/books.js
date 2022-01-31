@@ -6,6 +6,7 @@ const Book = require("../../models/Book")
 const MongoClient = require("mongodb").MongoClient
 const GridFsBucket = require("mongodb").GridFSBucket
 const dbConfig = require("../../db/connection")
+const { FILES_URL } = require("../../constants/index")
 
 const mongoClient = new MongoClient(
   `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ah3vy.mongodb.net`,
@@ -15,8 +16,6 @@ const mongoClient = new MongoClient(
   }
 )
 
-const filesUrl = "http://192.168.1.65:3000/user/books/files/"
-
 const router = express.Router()
 
 router.post(
@@ -25,6 +24,7 @@ router.post(
   upload.array("image"),
   async (req, res) => {
     const { title, author, genre, tags, description } = req.body
+    console.log(req.body)
     const photos = req.files.map((file) => file.id)
 
     const book = new Book({
@@ -91,7 +91,7 @@ router.get("/available", verifyToken, async (req, res) => {
         const photosUrl = await Promise.all(
           book.photos.map(async (photo) => {
             const image = await images.findOne({ _id: photo })
-            return filesUrl + image.filename
+            return FILES_URL + image.filename
           })
         )
         return { ...book, photos: photosUrl }
@@ -115,7 +115,7 @@ router.get("/wanted", verifyToken, async (req, res) => {
         const photosUrl = await Promise.all(
           book.photos.map(async (photo) => {
             const image = await images.findOne({ _id: photo })
-            return filesUrl + image.filename
+            return FILES_URL + image.filename
           })
         )
         return { ...book, photos: photosUrl }
@@ -216,7 +216,7 @@ router.get("/search", verifyToken, async (req, res) => {
       const photosUrl = await Promise.all(
         book.photos.map(async (photo) => {
           const image = await images.findOne({ _id: photo })
-          return filesUrl + image.filename
+          return FILES_URL + image.filename
         })
       )
       const owner = await User.findById(book.owner)
@@ -228,6 +228,31 @@ router.get("/search", verifyToken, async (req, res) => {
     })
   )
   res.json(cleanedBooks)
+})
+
+router.get("/:id", verifyToken, async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id)
+    await mongoClient.connect()
+    const db = mongoClient.db(dbConfig.dbName)
+    const images = db.collection("images.files")
+    const photosUrl = await Promise.all(
+      book.photos.map(async (photo) => {
+        const image = await images.findOne({ _id: photo })
+        return FILES_URL + image.filename
+      })
+    )
+    const owner = await User.findById(book.owner)
+    if (owner) {
+      res
+        .status(200)
+        .json({ book: { ...book, photos: photosUrl, owner: owner.name } })
+    } else {
+      res.status(200).json({ book: { ...book, photos: photosUrl } })
+    }
+  } catch (err) {
+    res.status(500).json({ message: err })
+  }
 })
 
 module.exports = router
