@@ -24,7 +24,6 @@ router.post(
   upload.array("image"),
   async (req, res) => {
     const { title, author, genre, tags, description } = req.body
-    console.log(req.body)
     const photos = req.files.map((file) => file.id)
 
     const book = new Book({

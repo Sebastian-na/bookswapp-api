@@ -51,7 +51,6 @@ router.get("/", verifyToken, async (req, res) => {
       }
     })
   )
-  console.log(notificationsData)
   res.status(200).json({ notifications: notificationsData })
 })
 

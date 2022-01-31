@@ -10,7 +10,6 @@ router.get("/", (req, res) => {
 
 router.post("/create", verifyToken, async (req, res) => {
   const { bookRequestedId, bookOfferedId, recipientId } = req.body
-  console.log(req.body)
   const userId = req.userId
   const swapRequest = new SwapRequest({
     sender: userId,
