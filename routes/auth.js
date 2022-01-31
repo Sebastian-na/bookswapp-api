@@ -76,7 +76,6 @@ router.post("/register", async (req, res) => {
       if (err) {
         console.log(err)
       }
-      console.log(user)
     })
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
@@ -91,9 +90,7 @@ router.post("/register", async (req, res) => {
       `,
       message: `Welcome to Bookswap ${name}`,
     }
-    mg.messages().send(data, (error, body) => {
-      console.log(body)
-    })
+    mg.messages().send(data, (error, body) => {})
     res.status(200).json({ message: "User created, Please verify your email" })
   } catch (err) {
     console.log(err)

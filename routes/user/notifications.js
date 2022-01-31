@@ -5,21 +5,11 @@ const SwapRequest = require("../../models/SwapRequest")
 const User = require("../../models/User")
 const Book = require("../../models/Book")
 const { FILES_URL } = require("../../constants/index")
-const MongoClient = require("mongodb").MongoClient
-const dbConfig = require("../../db/connection")
-
-const mongoClient = new MongoClient(
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ah3vy.mongodb.net`,
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }
-)
+const { mongoClient } = require("../../db/connection")
 
 router.get("/", verifyToken, async (req, res) => {
   await mongoClient.connect()
-  const db = mongoClient.db(dbConfig.dbName)
-  const images = db.collection("images.files")
+  const images = mongoClient.db().collection("images.files")
   const user = await User.findById(req.userId)
   //return the notifications of the user
   let notifications = user.swapNotifications

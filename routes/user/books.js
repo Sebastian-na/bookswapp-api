@@ -5,16 +5,8 @@ const User = require("../../models/User")
 const Book = require("../../models/Book")
 const MongoClient = require("mongodb").MongoClient
 const GridFsBucket = require("mongodb").GridFSBucket
-const dbConfig = require("../../db/connection")
+const { mongoClient } = require("../../db/connection")
 const { FILES_URL } = require("../../constants/index")
-
-const mongoClient = new MongoClient(
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ah3vy.mongodb.net`,
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }
-)
 
 const router = express.Router()
 
@@ -83,8 +75,7 @@ router.get("/available", verifyToken, async (req, res) => {
     const user = await User.findById(req.userId)
     const books = await Book.find({ _id: { $in: user.availableBooks } }).lean()
     await mongoClient.connect()
-    const db = mongoClient.db(dbConfig.dbName)
-    const images = db.collection("images.files")
+    const images = mongoClient.db().collection("images.files")
     const booksWithUrlOfImages = await Promise.all(
       books.map(async (book) => {
         const photosUrl = await Promise.all(
@@ -107,8 +98,7 @@ router.get("/wanted", verifyToken, async (req, res) => {
     const user = await User.findById(req.userId)
     const books = await Book.find({ _id: { $in: user.wantedBooks } }).lean()
     await mongoClient.connect()
-    const db = mongoClient.db(dbConfig.dbName)
-    const images = db.collection("images.files")
+    const images = mongoClient.db().collection("images.files")
     const booksWithUrlOfImages = await Promise.all(
       books.map(async (book) => {
         const photosUrl = await Promise.all(
@@ -129,7 +119,7 @@ router.get("/wanted", verifyToken, async (req, res) => {
 router.get("/files/:name/", async (req, res) => {
   try {
     await mongoClient.connect()
-    const db = mongoClient.db(dbConfig.dbName)
+    const db = mongoClient.db()
     const bucket = new GridFsBucket(db, {
       bucketName: "images",
     })
@@ -157,9 +147,8 @@ router.delete("/deleteAvailable/:id", verifyToken, async (req, res) => {
     })
     const book = await Book.findById(req.params.id)
     await mongoClient.connect()
-    const db = mongoClient.db(dbConfig.dbName)
-    const images = db.collection("images.files")
-    const chunks = db.collection("images.chunks")
+    const images = mongoClient.db().collection("images.files")
+    const chunks = mongoClient.db().collection("images.chunks")
     const photos = await images.find({ _id: { $in: book.photos } }).toArray()
     await Promise.all(
       photos.map(async (photo) => {
@@ -182,9 +171,8 @@ router.delete("/deleteWanted/:id", verifyToken, async (req, res) => {
     })
     const book = await Book.findById(req.params.id)
     await mongoClient.connect()
-    const db = mongoClient.db(dbConfig.dbName)
-    const images = db.collection("images.files")
-    const chunks = db.collection("images.chunks")
+    const images = mongoClient.db().collection("images.files")
+    const chunks = mongoClient.db().collection("images.chunks")
     const photos = await images.find({ _id: { $in: book.photos } }).toArray()
     await Promise.all(
       photos.map(async (photo) => {
@@ -203,8 +191,7 @@ router.delete("/deleteWanted/:id", verifyToken, async (req, res) => {
 // this route should return a list of books based on user query
 router.get("/search", verifyToken, async (req, res) => {
   await mongoClient.connect()
-  const db = mongoClient.db(dbConfig.dbName)
-  const images = db.collection("images.files")
+  const images = mongoClient.db().collection("images.files")
   const { q } = req.query
   const results = await Book.find({
     $text: { $search: q },
@@ -233,8 +220,7 @@ router.get("/:id", verifyToken, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id)
     await mongoClient.connect()
-    const db = mongoClient.db(dbConfig.dbName)
-    const images = db.collection("images.files")
+    const images = mongoClient.db().collection("images.files")
     const photosUrl = await Promise.all(
       book.photos.map(async (photo) => {
         const image = await images.findOne({ _id: photo })

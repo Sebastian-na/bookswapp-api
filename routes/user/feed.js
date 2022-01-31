@@ -3,17 +3,8 @@ const router = express.Router()
 const User = require("../../models/User")
 const Book = require("../../models/Book")
 const verifyToken = require("../../middlewares/verifyToken")
-const MongoClient = require("mongodb").MongoClient
-const dbConfig = require("../../db/connection")
+const { mongoClient } = require("../../db/connection")
 const { FILES_URL } = require("../../constants/index")
-
-const mongoClient = new MongoClient(
-  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ah3vy.mongodb.net`,
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }
-)
 
 // this route should return a list of books that the user is interested in (base on his genres)
 router.get("/", verifyToken, async (req, res) => {
@@ -24,8 +15,7 @@ router.get("/", verifyToken, async (req, res) => {
   }).lean()
 
   await mongoClient.connect()
-  const db = mongoClient.db(dbConfig.dbName)
-  const images = db.collection("images.files")
+  const images = mongoClient.db().collection("images.files")
   const booksWithUrlOfImages = await Promise.all(
     books.map(async (book) => {
       const photosUrl = await Promise.all(
@@ -62,13 +52,11 @@ router.get("/", verifyToken, async (req, res) => {
 })
 
 router.get("/post", verifyToken, async (req, res) => {
-  console.log("here")
   const user = await User.findById(req.userId)
   const book = await Book.findById(req.query.id).lean()
 
   await mongoClient.connect()
-  const db = mongoClient.db(dbConfig.dbName)
-  const images = db.collection("images.files")
+  const images = mongoClient.db().collection("images.files")
   const bookWithUrlOfImages = await Promise.all(
     book.photos.map(async (photo) => {
       const image = await images.findOne({ _id: photo })
