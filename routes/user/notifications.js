@@ -35,7 +35,7 @@ router.get("/", verifyToken, async (req, res) => {
         bookRequested,
         bookOffered,
         recipient,
-        status: swapRequest.status,
+        status: notification.status,
         sender: {
           ...sender._doc,
           profilePic: FILES_URL + senderProfilePic.filename,
