@@ -12,24 +12,26 @@ router.get("/", verifyToken, async (req, res) => {
   const images = mongoClient.db().collection("images.files")
   const user = await User.findById(req.userId)
   //return the notifications of the user
-  let notifications = user.swapNotifications
-  notifications = await Promise.all(
-    notifications.filter(async (notification) => {
-      const swapRequest = await SwapRequest.findById(notification)
-      return swapRequest.status === "pending"
+  let notificationsIds = user.swapNotifications
+  let notifications = await Promise.all(
+    notificationsIds.map(async (notification) => {
+      return await SwapRequest.findById(notification)
     })
   )
+  let filteredNotifications = notifications.filter(
+    (notification) => notification.status === "pending"
+  )
+  console.log(filteredNotifications)
   const notificationsData = await Promise.all(
-    notifications.map(async (notification) => {
-      const swapRequest = await SwapRequest.findById(notification)
-      const bookRequested = await Book.findById(swapRequest.bookRequested)
-      const bookOffered = await Book.findById(swapRequest.bookOffered)
-      const recipient = await User.findById(swapRequest.recipient, "-password")
-      const sender = await User.findById(swapRequest.sender, "-password")
+    filteredNotifications.map(async (notification) => {
+      const bookRequested = await Book.findById(notification.bookRequested)
+      const bookOffered = await Book.findById(notification.bookOffered)
+      const recipient = await User.findById(notification.recipient, "-password")
+      const sender = await User.findById(notification.sender, "-password")
       const senderProfilePic = await images.findOne({ _id: sender.profilePic })
 
       return {
-        _id: swapRequest._id,
+        _id: notification._id,
         bookRequested,
         bookOffered,
         recipient,
